@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>VIDS Blood Pressure</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style>
+      div.tooltip {	
+                   position: absolute;			
+                   text-align: center;			
+                   width: 60px;					
+                   height: 28px;					
+                   padding: 2px;				
+                   font: 12px sans-serif;		
+                   background: lightsteelblue;	
+                   border: 0px;		
+                   border-radius: 8px;			
+                   pointer-events: none;			
+       }
+     table, th, td {
+         border: 1px solid black;
+     }
+  </style>
+  </head>
+  <body background="img/header-bg.jpg">
+    <h1>Blood Pressure Vital Sign</h1>
+    <script type="text/javascript">
+    // Start of code for Visualization
+
+     var dataset;
+
+      var parseDate = d3.timeParse("%m/%d/%Y %H:%M:%S");
+
+     // Function to convert rows created from the
+     // csv file
+     var rowConverter = function(d) {
+       return { 
+         Day: d.Day,
+         T_MIDNIGHT: d.T_MIDNIGHT,
+         Date_Time: parseDate(d.Date_Time),
+         Name: d.Name,
+         Age: d.Age,
+         Gender: d.Gender,
+         Pulse: parseInt(d.Pulse),
+         Pulse_low: parseInt(d.Pulse_low),
+         Pulse_high:parseInt(d.Pulse_high),
+         SpO2: parseInt(d.SpO2),
+         SpO2_low: parseInt(d.SpO2_low),
+         SpO2_high: parseInt(d.SpO2_high),
+         Respiratory_rate: parseInt(d.Respiratory_rate),
+         Respiratory_rate_low: parseInt(d.Respiratory_rate_low),
+         Respiratory_rate_high: parseInt(d.Respiratory_rate_high),
+         BloodPressure_Sys: parseInt(d.BloodPressure_Sys),
+         BloodPressure_Sys_low: parseInt(d.BloodPressure_Sys_low),
+         BloodPressure_Sys_high: parseInt(d.BloodPressure_Sys_high),
+         Temp: parseInt(d.Temp),
+         Temp_low: parseInt(d.Temp_low),
+         Temp_high: parseInt(d.Temp_high),
+         BloodPressure_Dia: parseInt(d.BloodPressure_Dia),
+         BloodPressure_Dia_low: parseInt(d.BloodPressure_Dia_low),
+         BloodPressure_Dia_high: parseInt(d.BloodPressure_Dia_high),
+         BP_Ratio: parseFloat(d.BP_Ratio),
+         BP_Ratio_Normal_1: parseFloat(d.BP_Ratio_Normal_1),
+         BP_Ratio_Normal_2: parseFloat(d.BP_Ratio_Normal_2),
+         O2_Sup: parseFloat(d.O2_Sup),
+         O2_Sup_Hi: parseInt(d.O2_Sup_Hi),
+         O2_Sup_Lo: parseInt(d.O2_Sup_Lo),
+         LOC: parseInt(d.LOC),
+         LOC_High: parseInt(d.LOC_High),
+         LOC_Low: parseInt(d.LOC_Low)
+       };
+     }
+
+    // Function to generate the visualization
+    var generateVis = function(dataset) {
+
+      var w = 500;
+      var h = 500;
+      var padding = 20;
+
+      // Creates tooltip 
+      var tooltip = d3.select("body")
+                      .append("div")
+                      .attr("class", "tooltip")
+      ;
+    
+      // Creates SVG 
+      var svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", w)
+                  .attr("height", h);
+      // Creates Scale for X 
+      var xScale = d3.scaleLinear()
+                    .domain([ d3.min(dataset, function(d) { return d.Date_Time; }),  
+                              d3.max(dataset, function(d) { return d.Date_Time; })])
+                    .range([padding, w - padding])
+      ;
+
+      // Creates Scale for Y 
+      var yScale = d3.scaleLinear()
+                    .domain([  
+                             0, 200])
+                    .range([h-padding, padding])
+      ;
+      //Creates x-Axis
+      var xAxis = d3.axisBottom()
+                    .scale(xScale)
+      ;
+      // Creates y-Axis 
+      var yAxis = d3.axisLeft()
+                    .scale(yScale)
+      ; 
+      // Creates line generator to represent vital sign
+      var line = d3.line()
+                   .x(function(d)  { return xScale(d.Date_Time); })
+                   .y(function(d) {return yScale(d.BloodPressure_Sys_low); })
+      ;
+
+
+      // Creates rectangle that represents the healthy bar
+      svg.selectAll("rect")
+         .data(dataset)
+         .enter()
+         .append("rect")
+         .attr("x", function(d,i) { return xScale(d.Date_Time); })
+         .attr("y", function(d) { return yScale(d.BloodPressure_Sys_high);})
+         .attr("width", 1)
+         .attr("height", function(d) {return d.BloodPressure_Sys_high - d.BloodPressure_Sys_low + padding*2})
+         //.attr("height", function(d) {return yScale(d.BloodPressure_Sys_high - d.BloodPressure_Sys_low + padding*2);})
+         .attr("fill", "green")
+         .attr("opacity", 0.5)
+     ;   
+
+    // Creates a path to represent the vital sign of patient
+    svg.append("path")
+       .datum(dataset)
+       .attr("class", "line")
+       .attr("d", line)
+       .attr("stroke-width", 1)
+    ;
+
+    svg.selectAll("circle")
+       .data(dataset)
+       .enter()
+       .append("circle")
+       .attr("cx", function(d) { return xScale(d.Date_Time);})
+       .attr("cy", function(d) { return yScale(d.BloodPressure_Sys);})
+       .attr("r", 3)
+       .on("mouseover", function(d) {
+                                        return tooltip
+                                               .text(d.BloodPressure_Sys)
+                                               .style("visibility", "visible"); })
+       .on("mouseout", function(d) {
+                                        return tooltip.style("visibility", "hidden");})
+    ;
+
+    // Adds axes to the group object
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(0," + (h - padding) + ")")
+       .call(xAxis)
+       .selectAll("text")
+       .style("text-anchor", "end")
+       .attr("dx", "-.8em")
+       .attr("dy", ".15em")
+       .attr("transform", "rotate(-65)")
+    ;
+
+    // Adds axes to the group object
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(" + padding + ",0)")
+       .call(yAxis)
+   ;
+
+    }
+    //Reads the vital signs file
+    d3.csv("patient_0_v2.csv", rowConverter, function(error, data) {
+ 
+       if (error) {
+         console.log(error);
+       } else {
+         console.log(data);
+
+        dataset = data;
+        generateVis(dataset);
+      }
+    }); 
+    </script>
+<p>
+Vital signs are a measurement of the body’s basic functions. They are important component of patient care as they determine things like the general health of the patient, provide feedback on treatments performed or help determine treatment regimen.
+</p>
+<p>
+Blood is one of the four main vital signs routinely monitored. It is the measure of the force of blood pushing against the artery walls. Each time the heart beats, it pumps blood into the arteries resulting in the highest blood pressure as the heart contracts. This higher number, called systolic pressure, is what you will see in the graph below.
+</p>
+<p>
+The healthy range of blood pressure is 90 - 120, with readings below that range generally thought of as low blood pressure if below 90 and high blood pressure above 120. High blood pressure over a period of time causes damage to the arteries and could lead to heart attack or stroke.
+</p>
+<p>
+Each of these vital signs should not be considered in isolation, but in conjunction with other vital sign readings and the advice of your care giver.
+</p>
+
+<p>
+The following table shows the healthy range of blood pressure.
+</p>
+  <table>
+    <tr>
+      <th>Vital Sign</th>
+      <th>Healthy Range (low)</th>
+      <th>Healthy Range (high)</th>
+    </tr>
+    <tr>
+      <th>Blood Pressure</th>
+      <th>90</th>
+      <th>120</th>
+    </tr>
+  </table>
+  </body>
+</html>

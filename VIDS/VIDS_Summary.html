@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>MyVIDS</title>
+	<style type="text/css">
+	.title {
+		font-size: 32pt;
+		text-anchor: middle;
+	}
+	.d3-tip {
+		line-height: 1;
+		font-weight: bold;
+		padding: 12px;
+		background: rgba(0, 0, 0, 0.8);
+		color: #fff;
+		border-radius: 2px;
+	}
+	/* Creates a small triangle extender for the tooltip */
+	.d3-tip:after {
+		box-sizing: border-box;
+		display: inline;
+		font-size: 10px;
+		width: 100%;
+		line-height: 1;
+		color: rgba(0, 0, 0, 0.8);
+		content: "\25BC";
+		position: absolute;
+		text-align: center;
+	}
+	.d3-tip.n:after {
+		margin: -1px 0 0 0;
+		top: 100%;
+		left: 0;
+	}
+	#introduction {
+		border-radius: 25px;
+    border: 2px solid #82d4d8;
+    padding: 20px;
+    width: 200px;
+    height: 150px;
+    color: white;
+	}
+	</style>
+	<body background="img/header-bg.jpg">
+		<script type="text/javascript" src="d3.js"></script>
+		<script type="text/javascript" src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+		<link rel="stylesheet" href="css/font-awesome.min.css">
+		<link rel="stylesheet" href="css/animate.css">
+		<link href='http://fonts.googleapis.com/css?family=Raleway:400,100,200,300,500,600,700,800,900|Montserrat:400,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/main.css">
+
+		<div class="jumbotron text-center">
+		  <h1>Patient Vitals Summary</h1>
+		  <p>Data current as of: 12/09/17</p>
+		</div>
+
+		<div class="container">
+		  <div class="row">
+		      <div class="col-sm-3"></div>
+		      <div class="col-sm-6">
+		        <h3 style="text-align:center;"> Your loved one's vital scores are
+							charted below to provide an overview of their current health. The
+							summary visual is intended to help gauge their current health. A
+							few items to keep in mind:
+						</h3>
+						<h3 style="text-align:left;">
+						1.  Each vital score is shown against ideal (green), risk (orange),
+						and high-risk (red) ranges.
+					  </h3>
+						<h3 style="text-align:left;">
+						2.  For detail information click the vital sign score. A detailed
+						page will appear for further review.
+						</h3>
+		      </div>
+		      <div class="col-sm-6"></div>
+		    </div>
+		</div>
+
+		<script>
+
+		//Width and height
+		var margin = {top: 10, right: 150, bottom: 100, left: 100};
+  	var	width = 1200 - margin.left - margin.right;
+  	var	height = 700 - margin.top - margin.bottom;
+
+		//Create Scale Functions
+		var x = d3.scaleBand().range([0, width], .1).padding(0.1);
+  	var	y = d3.scaleLinear().range([height, 0]);
+
+		//Create Large SVG element
+		var svg = d3.select("body")
+								.append("svg")
+								.attr("width", width + margin.left + margin.right)
+								.attr("height", height + margin.top + margin.bottom)
+								.append("g")
+								.attr("transform", "translate(" + margin.left + "," +
+								margin.top + ")");
+
+		// Add Healthy Range Overlay
+		var hrect = d3.select("svg")
+									.append("rect")
+									.attr("x", 100)
+									.attr("width", width)
+									.attr("y", 277)
+									.attr("height", 53)
+									.attr("fill", "green")
+									.attr("opacity", 0.2);
+
+		 var r1rect = d3.select("svg")
+		 							 .append("rect")
+									 .attr("x", 100)
+									 .attr("width", width)
+									 .attr("y", 330)
+									 .attr("height", 54)
+									 .attr("fill", "darkorange")
+									 .attr("opacity", 0.2);
+
+		 var r2rect = d3.select("svg")
+		 							 .append("rect")
+									 .attr("x", 100)
+									 .attr("width", width)
+									 .attr("y", 223)
+									 .attr("height", 54)
+									 .attr("fill", "darkorange")
+									 .attr("opacity", 0.2);
+
+    //Load .csv file
+    d3.csv("v_summary.csv", function(error, data) {
+      if (error) throw error;
+
+      //format data
+      data.forEach(function(d) {
+				d.score = +d.score;
+      });
+
+      x.domain(data.map(function(d) {return d.vital; }));
+      y.domain([0, 200]);
+
+      //Create bars
+      svg.selectAll("rect")
+         .data(data)
+         .enter()
+         .append("rect")
+         .attr("x", function(d) { return x(d.vital); })
+         .attr("width", x.bandwidth())
+         .attr("y", function(d) { return y(d.score); })
+         .attr("height", function(d) { return height - y(d.score); })
+				 .attr("fill", function(d) {
+						if (d.score > 120) {
+							return "red";
+						} else if (d.score < 80) {
+						return "red";
+						}
+						return "green";})
+				 .on("mouseover", handleMouseOver)
+				 .on("mouseout", handleMouseOut)
+				 .on("click", function(d) { window.open(d.url); })
+				 .append("title")
+				 .text(function(d) {
+							return d.vital + " is " + d.score + " of healthy range ";
+				 });
+
+      // Add the x Axis
+      svg.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(x));
+
+      // Add the y Axis
+      svg.append("g")
+         .call(d3.axisLeft(y)
+         .ticks(10)
+         .tickFormat(function(d){return d+ "%"})
+         );
+
+       // text label for the x axis
+       svg.append("text")
+          .attr("y", height + margin.bottom / 2)
+          .attr("x", (width / 2))
+          .style("text-anchor", "middle")
+          .style("font-size", "22px")
+          .text("Vital");
+
+      // text label for the y axis
+      svg.append("text")
+         .attr("transform", "rotate(-90)")
+         .attr("y", 0 - margin.left)
+         .attr("x",0 - (height / 2))
+         .attr("dy", "2em")
+         .style("text-anchor", "middle")
+         .style("font-size", "22px")
+         .text("Percent of Healthy Range");
+
+				 // text label for the healthy range
+				 svg.append("text")
+				 	  .attr("y", y(100))
+				 	  .attr("x", width)
+				 	  .style("font-size", "16px")
+				 	  .text(" <-- Healthy Range");
+
+				 svg.append("text")
+				 	  .attr("y", y(120))
+				 	  .attr("x", width)
+				 	  .style("font-size", "16px")
+				 	  .text(" <-- Risk");
+
+				 svg.append("text")
+						.attr("y", y(80))
+						.attr("x", width)
+						.style("font-size", "16px")
+						.text(" <-- Risk");
+
+				 svg.append("text")
+ 					  .attr("y", y(40))
+ 					  .attr("x", width)
+ 					  .style("font-size", "16px")
+ 					  .text(" <-- High Risk");
+
+				 svg.append("text")
+					  .attr("y", y(160))
+					  .attr("x", width)
+					  .style("font-size", "16px")
+					  .text(" <-- High Risk");
+
+
+			 // Create Event Handlers for mouse
+       function handleMouseOver(d,i) {  // Add interactivity
+
+						 d3.select(this)
+							 .attr("fill", "magenta")
+							 .attr("x", function(d) { return x(d.vital) - x.bandwidth() * .05; })
+							 .attr("width", x.bandwidth() * 1.1)
+							 .attr("y", function(d) { return y(d.score) * .8; })
+			         .attr("height", function(d) { return height - (y(d.score) * .8); });
+
+						 svg.append("text")
+						 	 .attr("id", "t" + d.vital + "-" + d.score + "-" + i)
+							 .attr("y", height - 5)
+							 .attr("x", function() { return x(d.vital) + 15; })
+							 .style("fill", "black")
+							 .style("font-weight", "bold")
+							 .text("Click For Detail");
+						 }
+
+       function handleMouseOut(d,i) {
+
+				 			d3.select(this)
+								.attr("x", function(d) { return x(d.vital); })
+								.attr("width", x.bandwidth())
+								.attr("y", function(d) { return y(d.score); })
+								.attr("height", function(d) { return height - y(d.score); })
+								.attr("fill", function(d) {
+									if (d.score > 120) {
+										return "red";
+									} else if (d.score < 80) {
+									return "red";
+									}
+									return "green";})
+
+						 d3.select("#t" + d.vital + "-" + d.score + "-" + i).remove();
+           }
+    });
+
+</script>
+</body>
+
+<!-- .on("mouseover", function() {
+	 d3.select(this)
+		 .attr("fill", "grey");})
+
+.on("mouseout", function(d) {
+	 d3.select(this)
+		 .transition()
+		 .duration(500)
+		 .attr("fill", function(d) {
+			 if (d.score > 120) {
+				 return "red";
+			 } else if (d.score < 80) {
+			 return "red";
+			 }
+			 return "green";})}) -->

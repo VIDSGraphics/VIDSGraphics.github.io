@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>VIDS Blood Pressure</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style>
+      div.tooltip {
+                   position: absolute;
+                   text-align: center;
+                   width: 60px;
+                   height: 28px;
+                   padding: 2px;
+                   font: 12px sans-serif;
+                   background: lightsteelblue;
+                   border: 0px;
+                   border-radius: 8px;
+                   pointer-events: none;
+       }
+     table, th, td {
+         border: 1px solid black;
+     }
+  </style>
+  </head>
+  <body background="img/header-bg.jpg">
+    <h1>Pulse Vital Sign</h1>
+    <script type="text/javascript">
+    // Start of code for Visualization
+
+     var dataset;
+
+     // Function to convert rows created from the
+     // csv file
+     var rowConverter = function(d) {
+       return { 
+         Time: d.Time,
+         TimeMS: d.TimeMS,
+         Clock: d.Clock,
+         Pulse: parseInt(d.Pulse),
+         Pulse_low: parseInt(d.Pulse_low),
+         Pulse_high:parseInt(d.Pulse_high),
+         SpO2: parseInt(d.SpO2),
+         SpO2_low: parseInt(d.SpO2_low),
+         SpO2_high: parseInt(d.SpO2_high),
+         Respiratory_rate: parseInt(d.Respiratory_rate),
+         Respiratory_rate_low: parseInt(d.Respiratory_rate_low),
+         Respiratory_rate_high: parseInt(d.Respiratory_rate_high),
+         BloodPressure_Sys: parseInt(d.BloodPressure_Sys),
+         BloodPressure_Sys_low: parseInt(d.BloodPressure_Sys_low),
+         BloodPressure_Sys_high: parseInt(d.BloodPressure_Sys_high),
+         Temp: parseInt(d.Temp),
+         Temp_low: parseInt(d.Temp_low),
+         Temp_high: parseInt(d.Temp_high)
+       };
+     }
+
+    // Function to generate the visualization
+    var generateVis = function(dataset) {
+
+      var w = 500;
+      var h = 500;
+      var padding = 20;
+    
+      // Creates SVG 
+      var svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", w)
+                  .attr("height", h);
+      // Creates Scale for X 
+      var xScale = d3.scaleLinear()
+                    .domain([ d3.min(dataset, function(d) { return d.TimeMS; }),  
+                              d3.max(dataset, function(d) { return d.TimeMS; })])
+                    .range([padding, w - padding])
+      ;
+
+      // Creates Scale for Y 
+      var yScale = d3.scaleLinear()
+                    .domain([  
+                             0, 120])
+                    .range([h-padding, padding])
+      ;
+      //Creates x-Axis
+      var xAxis = d3.axisBottom()
+                    .scale(xScale)
+      ;
+      // Creates y-Axis 
+      var yAxis = d3.axisLeft()
+                    .scale(yScale)
+      ; 
+      // Creates line generator to represent vital sign
+      var line = d3.line()
+                   .x(function(d)  { return xScale(d.TimeMS); })
+                   .y(function(d)  { return yScale(d.Pulse); })
+      ;
+      // Creates tooltip 
+      var tooltip = d3.select("body")
+                      .append("div")
+                      .style("position", "absolute")
+                      .style("z-index", "10")
+                      .style("visibility", "hidden")
+                      .text("a simple tooltip")
+      ;
+      // Creates rectangle that represents the healthy bar
+      svg.selectAll("rect")
+         .data(dataset)
+         .enter()
+         .append("rect")
+         .attr("x", function(d,i) { return xScale(d.TimeMS); })
+         .attr("y", function(d) { return yScale(d.Pulse_high);})
+         .attr("width", 1)
+         .attr("height", function(d) { return yScale(d.Pulse_high - d.Pulse_low + padding*2);} ) 
+         //.attr("height", function(d) {return yScale(d.Pulse_high - d.Pulse_low) })
+         .attr("fill", "green")
+         .attr("opacity", 0.5)
+     ;   
+
+     // Adds Label around healthy range
+
+    var g = svg.selectAll("g")
+               .data(1)
+    ;
+
+    var gg = g.enter()
+              .append("g")
+              .attr("transform", function(d) {return "translate(0,80)";})
+    ;
+
+    var c = gg.append("circle")
+       .attr("r", 25)
+       .style("fill", "red")
+    ;
+
+    // Creates a path to represent the vital sign of patient
+    svg.append("path")
+       .datum(dataset)
+       .attr("class", "line")
+       .attr("d", line)
+       .attr("stroke-width", 1)
+    ;
+
+    svg.selectAll("circle")
+       .data(dataset)
+       .enter()
+       .append("circle")
+       .attr("cx", function(d) { return xScale(d.TimeMS);})
+       .attr("cy", function(d) { return yScale(d.Pulse);})
+       .attr("r", 3)
+       .on("mouseover", function(d) {
+                                        return tooltip
+                                               .text(d.Pulse)
+                                               .style("visibility", "visible"); })
+       .on("mouseout", function(d) {
+                                        return tooltip.style("visibility", "hidden");})
+    ;
+
+
+    // Adds axes to the group object
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(0," + (h - padding) + ")")
+       .call(xAxis)
+    ;
+
+    // Adds axes to the group object
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(" + padding + ",0)")
+       .call(yAxis)
+   ;
+    }
+    //Reads the vital signs file
+    d3.csv("vitals1.csv", rowConverter, function(error, data) {
+ 
+       if (error) {
+         console.log(error);
+       } else {
+         console.log(data);
+
+        dataset = data;
+        generateVis(dataset);
+      }
+    }); 
+    </script>
+<p>
+Vital signs are a measurement of the body’s basic functions. They are important component of patient care as they determine things like the general health of the patient, provide feedback on treatments performed or help determine treatment regimen.
+</p>
+
+<p>
+Pulse is a proxy of heart rate as it measures blood being forced through the arteries by the blood. Pulse indicates not only the rate but also the heart rhythm and the strength. This can be measured at certain points in the body such as the side of the neck, inside of the elbow or the wrist.
+</p>
+
+<p>
+Normal pulse for healthy adults ranges from 60 to 100 beats per minute. A consistently irregular heart rate that is too high or too low may indicate an underlying problem. Low rates could lead to dizziness, shortness of breath, chest pains or prelude lack of consciousness. High rates could be predictors of heart attacks.
+</p>
+
+<p>
+Each of these vital signs should not be considered in isolation, but in conjunction with other vital sign readings and the advice of your care giver.
+</p>
+
+<p>
+The following table shows the healthy range of pulse.
+</p>
+  <table>
+    <tr>
+      <th>Vital Sign</th>
+      <th>Healthy Range (low)</th>
+      <th>Healthy Range (high)</th>
+    </tr>
+    <tr>
+      <th>Pulse</th>
+      <th>59</th>
+      <th>99</th>
+    </tr>
+  </table>
+  </body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>VIDS Respiratory Rate</title>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <style>
+      div.tooltip {	
+                   position: absolute;			
+                   text-align: center;			
+                   width: 60px;					
+                   height: 28px;					
+                   padding: 2px;				
+                   font: 12px sans-serif;		
+                   background: lightsteelblue;	
+                   border: 0px;		
+                   border-radius: 8px;			
+                   pointer-events: none;			
+       }
+     table, th, td {
+         border: 1px solid black;
+     }
+  </style>
+  </head>
+  <body background="img/header-bg.jpg">
+    <h1>Respiratory Rate Vital Sign</h1>
+    <script type="text/javascript">
+    // Start of code for Visualization
+
+     var dataset;
+
+     // Function to convert rows created from the
+     // csv file
+     var rowConverter = function(d) {
+       return { 
+         Time: d.Time,
+         TimeMS: d.TimeMS,
+         Clock: d.Clock,
+         Pulse: parseInt(d.Pulse),
+         Pulse_low: parseInt(d.Pulse_low),
+         Pulse_high:parseInt(d.Pulse_high),
+         SpO2: parseInt(d.SpO2),
+         SpO2_low: parseInt(d.SpO2_low),
+         SpO2_high: parseInt(d.SpO2_high),
+         Respiratory_rate: parseInt(d.Respiratory_rate),
+         Respiratory_rate_low: parseInt(d.Respiratory_rate_low),
+         Respiratory_rate_high: parseInt(d.Respiratory_rate_high),
+         BloodPressure_Sys: parseInt(d.BloodPressure_Sys),
+         BloodPressure_Sys_low: parseInt(d.BloodPressure_Sys_low),
+         BloodPressure_Sys_high: parseInt(d.BloodPressure_Sys_high),
+         Temp: parseInt(d.Temp),
+         Temp_low: parseInt(d.Temp_low),
+         Temp_high: parseInt(d.Temp_high)
+       };
+     }
+
+    // Function to generate the visualization
+    var generateVis = function(dataset) {
+
+      var w = 500;
+      var h = 400;
+      var padding = 20;
+
+      // Creates tooltip 
+      var tooltip = d3.select("body")
+                      .append("div")
+                      .attr("class", "tooltip")
+      ;
+    
+      // Creates SVG 
+      var svg = d3.select("body")
+                  .append("svg")
+                  .attr("width", w)
+                  .attr("height", h);
+      // Creates Scale for X 
+      var xScale = d3.scaleLinear()
+                    .domain([ d3.min(dataset, function(d) { return d.TimeMS; }),  
+                              d3.max(dataset, function(d) { return d.TimeMS; })])
+                    .range([padding, w - padding])
+      ;
+
+      // Creates Scale for Y 
+      var yScale = d3.scaleLinear()
+                    .domain([  
+                             0, 30])
+                    .range([h-padding, padding])
+      ;
+      //Creates x-Axis
+      var xAxis = d3.axisBottom()
+                    .scale(xScale)
+      ;
+      // Creates y-Axis 
+      var yAxis = d3.axisLeft()
+                    .scale(yScale)
+      ; 
+      // Creates line generator to represent vital sign
+      var line = d3.line()
+                   .x(function(d)  { return xScale(d.TimeMS); })
+                   .y(function(d) {return yScale(d.Respiratory_rate_low); })
+      ;
+
+
+      // Creates rectangle that represents the healthy bar
+      svg.selectAll("rect")
+         .data(dataset)
+         .enter()
+         .append("rect")
+         .attr("x", function(d,i) { return xScale(d.TimeMS); })
+         .attr("y", function(d) { return yScale(d.Respiratory_rate_high);})
+         .attr("width", 1)
+         .attr("height", function(d) {return d.Respiratory_rate_high - d.Respiratory_rate_low + padding*2})
+         .attr("fill", "green")
+         .attr("opacity", 0.5)
+     ;   
+
+    // Creates a path to represent the vital sign of patient
+    svg.append("path")
+       .datum(dataset)
+       .attr("class", "line")
+       .attr("d", line)
+       .attr("stroke-width", 1)
+    ;
+
+    svg.selectAll("circle")
+       .data(dataset)
+       .enter()
+       .append("circle")
+       .attr("cx", function(d) { return xScale(d.TimeMS);})
+       .attr("cy", function(d) { return yScale(d.Respiratory_rate);})
+       .attr("r", 3)
+       .on("mouseover", function(d) {
+                                        return tooltip
+                                               .text(d.Respiratory_rate)
+                                               .style("visibility", "visible"); })
+       .on("mouseout", function(d) {
+                                        return tooltip.style("visibility", "hidden");})
+    ;
+
+    // Adds axes to the group object
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(0," + (h - padding) + ")")
+       .call(xAxis)
+    ;
+
+    // Adds axes to the group object
+    svg.append("g")
+       .attr("class", "axis")
+       .attr("transform", "translate(" + padding + ",0)")
+       .call(yAxis)
+   ;
+    }
+    //Reads the vital signs file
+    d3.csv("vitals1.csv", rowConverter, function(error, data) {
+ 
+       if (error) {
+         console.log(error);
+       } else {
+         console.log(data);
+
+        dataset = data;
+        generateVis(dataset);
+      }
+    }); 
+    </script>
+  </body>
+<p>
+Vital signs are a measurement of the body’s basic functions. They are important component of patient care as they determine things like the general health of the patient, provide feedback on treatments performed or help determine treatment regimen.
+</p>
+
+<p>
+Respiration rate is the number of breaths a person takes per minute. Normal respiration for a healthy person is usually in the range of 12 to 16 breaths per minute. This measures the body’s acquisition of oxygen for its supply and release carbon dioxide. It could be a predictor of respiratory illnesses and provides valuable information about your cardiac, neurological and pulmonary conditions. Increased breathing rates could predict serious issues especially when they exceed 24-27 breaths per minute.
+</p>
+
+<p>
+Each of these vital signs should not be considered in isolation, but in conjunction with other vital sign readings and the advice of your care giver.
+</p>
+
+<p>
+The following table shows the healthy range of blood pressure.
+</p>
+  <table>
+    <tr>
+      <th>Vital Sign</th>
+      <th>Healthy Range (low)</th>
+      <th>Healthy Range (high)</th>
+    </tr>
+    <tr>
+      <th>Respiratory rate</th>
+      <th>12</th>
+      <th>18</th>
+    </tr>
+  </table>
+</html>
